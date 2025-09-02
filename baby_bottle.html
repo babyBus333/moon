@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>宝宝奶量计算器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Comic Sans MS', 'Arial Rounded MT Bold', sans-serif;
+            background-color: #f9f0ff;
+            color: #5a5a5a;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="20" cy="20" r="5" fill="%23ffd6e7" opacity="0.5"/><circle cx="50" cy="50" r="8" fill="%23d6f0ff" opacity="0.5"/><circle cx="80" cy="80" r="6" fill="%23e2ffd6" opacity="0.5"/></svg>');
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 25px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        
+        h1 {
+            color: #ff7eb8;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px dashed #e6e6e6;
+        }
+        
+        .section:last-child {
+            border-bottom: none;
+        }
+        
+        h2 {
+            color: #7ec5ff;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        h2::before {
+            content: "•";
+            margin-right: 8px;
+            color: #ff7eb8;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #888;
+            font-size: 14px;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e6e6e6;
+            border-radius: 15px;
+            font-size: 16px;
+            background-color: #f9f9f9;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        
+        select {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ff7eb8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 15px;
+        }
+        
+        .result-box {
+            background-color: #f0f9ff;
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: center;
+            border: 2px dashed #7ec5ff;
+        }
+        
+        .result-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff7eb8;
+            margin-top: 5px;
+        }
+        
+        .calculate-btn {
+            background-color: #ff7eb8;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 15px 25px;
+            font-size: 18px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(255, 126, 184, 0.3);
+        }
+        
+        .calculate-btn:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 10px rgba(255, 126, 184, 0.2);
+        }
+        
+        .bottle-icon {
+            display: block;
+            margin: 0 auto 15px;
+            width: 80px;
+            height: 80px;
+            background-color: #7ec5ff;
+            border-radius: 15px 15px 35px 35px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .bottle-icon::before {
+            content: "";
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+        }
+        
+        .milk-level {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #fff8e1;
+            transition: height 0.5s;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <h1>🍼 宝宝奶量计算器</h1>
+    
+    <div class="container">
+        <div class="bottle-icon">
+            <div class="milk-level" id="milkLevel"></div>
+        </div>
+        
+        <div class="section">
+            <h2>第一步：选择水量</h2>
+            <label for="waterVolume">加入水的体积 (30ml的倍数)</label>
+            <select id="waterVolume">
+                <!-- 选项将由JavaScript动态生成 -->
+            </select>
+            
+            <div class="result-box">
+                <div>冲泡后奶瓶总重</div>
+                <div class="result-value" id="totalWeight">0g</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>第二步：输入剩余重量</h2>
+            <label for="remainingWeight">喝完后奶瓶的重量 (g)</label>
+            <input type="number" id="remainingWeight" placeholder="请输入重量">
+            
+            <button class="calculate-btn" id="calculateBtn">计算奶量</button>
+            
+            <div class="result-box">
+                <div>宝宝实际喝了</div>
+                <div class="result-value" id="milkVolume">0ml</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        设计给新生儿父母使用的奶量计算工具
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 常量定义
+            const EMPTY_BOTTLE_WEIGHT = 175; // 空瓶重量
+            const WATER_TO_MILK_RATIO = 100/90; // 90ml水冲泡出100ml奶
+            const POWDER_PER_30ML = 5; // 每30ml水加一勺奶粉（5g）
+            
+            // 获取DOM元素
+            const waterVolumeSelect = document.getElementById('waterVolume');
+            const totalWeightDisplay = document.getElementById('totalWeight');
+            const remainingWeightInput = document.getElementById('remainingWeight');
+            const calculateBtn = document.getElementById('calculateBtn');
+            const milkVolumeDisplay = document.getElementById('milkVolume');
+            const milkLevel = document.getElementById('milkLevel');
+            
+            // 生成水量选项（30-210ml，30的倍数）
+            function populateWaterOptions() {
+                // 尝试从本地存储获取上次选择的值
+                const savedVolume = localStorage.getItem('selectedWaterVolume');
+                let selectedValue = savedVolume ? parseInt(savedVolume) : 90; // 默认90ml
+                
+                for (let i = 30; i <= 210; i += 30) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = `${i} ml`;
+                    if (i === selectedValue) {
+                        option.selected = true;
+                    }
+                    waterVolumeSelect.appendChild(option);
+                }
+            }
+            
+            // 计算冲泡后奶瓶总重
+            function calculateTotalWeight(waterVolume) {
+                const powderScoops = waterVolume / 30;
+                const powderWeight = powderScoops * POWDER_PER_30ML;
+                return EMPTY_BOTTLE_WEIGHT + waterVolume + powderWeight;
+            }
+            
+            // 更新奶瓶图标中的奶量显示
+            function updateMilkLevel(waterVolume) {
+                // 最大水量210ml对应奶瓶高度的70%
+                const maxWater = 210;
+                const percentage = (waterVolume / maxWater) * 70;
+                milkLevel.style.height = `${percentage}%`;
+            }
+            
+            // 计算宝宝实际喝掉的奶量体积
+            function calculateMilkVolume(waterVolume, remainingWeight) {
+                const totalWeight = calculateTotalWeight(waterVolume);
+                
+                if (remainingWeight > totalWeight) {
+                    alert("剩余重量不能大于总重量，请检查输入");
+                    return 0;
+                }
+                
+                if (remainingWeight < EMPTY_BOTTLE_WEIGHT) {
+                    alert("剩余重量不能小于空瓶重量，请检查输入");
+                    return 0;
+                }
+                
+                // 计算喝掉的奶的重量（总重 - 剩余重量）
+                const milkWeightDrunk = totalWeight - remainingWeight;
+                
+                // 计算冲泡后的奶的总体积
+                const totalMilkVolume = waterVolume * WATER_TO_MILK_RATIO;
+                
+                // 计算冲泡后的奶的总重量（不包括瓶子）
+                const milkWeightTotal = waterVolume + (waterVolume / 30) * POWDER_PER_30ML;
+                
+                // 计算每克奶对应的体积
+                const volumePerGram = totalMilkVolume / milkWeightTotal;
+                
+                // 计算宝宝喝掉的奶的体积
+                return Math.round(milkWeightDrunk * volumePerGram);
+            }
+            
+            // 初始化水量选项
+            populateWaterOptions();
+            
+            // 初始更新总重显示和奶瓶图标
+            const initialWaterVolume = parseInt(waterVolumeSelect.value);
+            totalWeightDisplay.textContent = `${calculateTotalWeight(initialWaterVolume)}g`;
+            updateMilkLevel(initialWaterVolume);
+            
+            // 水量选择变化事件
+            waterVolumeSelect.addEventListener('change', function() {
+                const waterVolume = parseInt(this.value);
+                totalWeightDisplay.textContent = `${calculateTotalWeight(waterVolume)}g`;
+                updateMilkLevel(waterVolume);
+                
+                // 保存选择到本地存储
+                localStorage.setItem('selectedWaterVolume', waterVolume);
+            });
+            
+            // 计算按钮点击事件
+            calculateBtn.addEventListener('click', function() {
+                const waterVolume = parseInt(waterVolumeSelect.value);
+                const remainingWeight = parseInt(remainingWeightInput.value);
+                
+                if (isNaN(remainingWeight)) {
+                    alert("请输入喝完后奶瓶的重量");
+                    return;
+                }
+                
+                const milkVolume = calculateMilkVolume(waterVolume, remainingWeight);
+                milkVolumeDisplay.textContent = `${milkVolume}ml`;
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>宝宝奶量计算器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // 配置Tailwind自定义颜色和字体
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FF9EAA', // 粉色主色调，适合婴儿
+                        secondary: '#81C784', // 绿色辅助色
+                        accent: '#4FC3F7', // 蓝色强调色
+                        neutral: '#FFF8E1', // 米色背景
+                    },
+                    fontFamily: {
+                        bubble: ['Comic Sans MS', 'cursive', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+            }
+            .bg-pattern {
+                background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 50C50 27.9 72.1 6 100 6V94C72.1 94 50 72.1 50 50Z' fill='%23FFD7DA' fill-opacity='0.3'/%3E%3Cpath d='M0 50C0 27.9 22.1 6 50 6V94C22.1 94 0 72.1 0 50Z' fill='%23A5D6A7' fill-opacity='0.3'/%3E%3C/svg%3E");
+            }
+            .bottle-shadow {
+                filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06));
+            }
+            .btn-bounce:hover {
+                transform: translateY(-3px);
+            }
+            .btn-bounce:active {
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-neutral bg-pattern min-h-screen font-bubble text-gray-800">
+    <!-- 顶部装饰 -->
+    <div class="absolute top-0 left-0 right-0 h-4 bg-primary rounded-b-full"></div>
+    
+    <!-- 主容器 -->
+    <div class="container mx-auto px-4 pt-10 pb-6 max-w-md min-h-[90vh] flex flex-col">
+        <!-- 头部 -->
+        <header class="text-center mb-4">
+            <h1 class="text-[clamp(1.5rem,4vw,2rem)] font-bold text-primary text-shadow">
+                🍼 宝宝奶量计算器 🍼
+            </h1>
+            <p class="text-gray-600 text-sm mt-1">轻松计算宝宝实际喝奶量</p>
+        </header>
+
+        <!-- 奶瓶卡通图标 - 减小尺寸 -->
+        <div class="flex justify-center mb-4">
+            <div class="relative bottle-shadow">
+                <div class="w-28 h-48 bg-white rounded-t-full border-4 border-gray-300 overflow-hidden">
+                    <div id="milk-level" class="absolute bottom-0 left-0 right-0 h-36 bg-primary/70 transition-all duration-500"></div>
+                    <div class="absolute top-2 left-1/2 transform -translate-x-1/2 w-16 h-5 bg-white border-4 border-gray-300 rounded-full"></div>
+                </div>
+                <div class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 h-2 bg-gray-300 rounded-full"></div>
+            </div>
+        </div>
+
+        <!-- 主要内容 - 紧凑布局 -->
+        <main class="bg-white rounded-3xl p-4 shadow-lg border-2 border-primary/30 flex-grow">
+            <!-- 步骤1：选择水的体积 -->
+            <section class="mb-4">
+                <h2 class="text-lg font-bold text-primary mb-2 flex items-center">
+                    💧 步骤1：选择水的体积
+                </h2>
+                <div class="bg-neutral/70 p-3 rounded-2xl">
+                    <label for="water-volume" class="block mb-1 text-gray-700 text-sm">水的体积 (ml):</label>
+                    <select id="water-volume" class="w-full p-2 rounded-xl border-2 border-primary/50 bg-white text-gray-800 focus:outline-none focus:border-primary transition-all text-base">
+                        <!-- 选项将通过JavaScript动态生成 -->
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1 italic">提示：请选择30-210ml之间的水量，必须是30的倍数</p>
+                </div>
+            </section>
+
+            <!-- 步骤2：显示冲泡后的总重量 -->
+            <section class="mb-4 hidden" id="total-weight-section">
+                <h2 class="text-lg font-bold text-secondary mb-2 flex items-center">
+                    ⚖️ 冲泡后总重量
+                </h2>
+                <div class="bg-neutral/70 p-3 rounded-2xl text-center">
+                    <p class="text-base">冲泡后的奶瓶总重：</p>
+                    <p id="total-weight" class="text-2xl font-bold text-secondary mt-1">0 g</p>
+                    <p class="text-xs text-gray-600 mt-1">包含：水 + 奶粉 + 空瓶</p>
+                </div>
+            </section>
+
+            <!-- 步骤3：输入剩余重量并计算 -->
+            <section class="mb-4 hidden" id="calculate-section">
+                <h2 class="text-lg font-bold text-accent mb-2 flex items-center">
+                    🔢 步骤3：计算喝奶量
+                </h2>
+                <div class="bg-neutral/70 p-3 rounded-2xl">
+                    <label for="remaining-weight" class="block mb-1 text-gray-700 text-sm">喝完后剩余重量 (g):</label>
+                    <input type="number" id="remaining-weight" min="175" class="w-full p-2 rounded-xl border-2 border-accent/50 bg-white text-gray-800 focus:outline-none focus:border-accent transition-all text-base" placeholder="请输入重量">
+                    <p class="text-xs text-gray-500 mt-1 italic">提示：空瓶重量为175g，输入值不能小于此数</p>
+                </div>
+                <button id="calculate-btn" class="w-full mt-3 py-2.5 bg-accent text-white font-bold rounded-xl shadow-md transition-all btn-bounce flex items-center justify-center text-base">
+                    🔢 计算宝宝喝奶量
+                </button>
+            </section>
+
+            <!-- 结果显示 -->
+            <section class="mb-2 hidden" id="result-section">
+                <div class="bg-secondary/20 p-3 rounded-2xl border-2 border-secondary/30">
+                    <h2 class="text-lg font-bold text-secondary mb-2 text-center">计算结果</h2>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="text-center">
+                            <p class="text-xs text-gray-600">喝掉的重量</p>
+                            <p id="drank-weight" class="text-xl font-bold text-gray-800">0 g</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-600">喝掉的体积</p>
+                            <p id="drank-volume" class="text-xl font-bold text-secondary">0 ml</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <p class="text-sm text-gray-700">相当于添加了约</p>
+                        <p id="scoops-count" class="text-xl font-bold text-accent">0</p>
+                        <p class="text-xs text-gray-700">勺奶粉冲泡的奶量</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 底部信息 - 精简显示 -->
+        <footer class="text-center mt-4 text-gray-500 text-xs">
+            <p>💖 为宝宝健康成长精心设计 💖</p>
+        </footer>
+    </div>
+
+    <script>
+        // 常量定义
+        const EMPTY_BOTTLE_WEIGHT = 175; // 空瓶子重量(g)
+        const MILK_POWDER_PER_SCOOP = 5; // 一勺奶粉重量(g)
+        const WATER_PER_SCOOP = 30; // 每勺奶粉对应水量(ml)
+        const WATER_TO_MILK_RATIO = 90 / 100; // 水与奶的体积比例
+
+        // DOM 元素
+        const waterVolumeSelect = document.getElementById('water-volume');
+        const totalWeightSection = document.getElementById('total-weight-section');
+        const totalWeightDisplay = document.getElementById('total-weight');
+        const calculateSection = document.getElementById('calculate-section');
+        const remainingWeightInput = document.getElementById('remaining-weight');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const resultSection = document.getElementById('result-section');
+        const drankWeightDisplay = document.getElementById('drank-weight');
+        const drankVolumeDisplay = document.getElementById('drank-volume');
+        const scoopsCountDisplay = document.getElementById('scoops-count');
+        const milkLevelElement = document.getElementById('milk-level');
+
+        // 初始化页面
+        function init() {
+            // 生成水体积选项
+            generateWaterVolumeOptions();
+            
+            // 尝试加载缓存的设置
+            loadCachedSettings();
+            
+            // 添加事件监听器
+            waterVolumeSelect.addEventListener('change', handleWaterVolumeChange);
+            calculateBtn.addEventListener('click', calculateMilkConsumption);
+        }
+
+        // 生成水体积选项
+        function generateWaterVolumeOptions() {
+            for (let volume = 30; volume <= 210; volume += 30) {
+                const option = document.createElement('option');
+                option.value = volume;
+                option.textContent = `${volume} ml`;
+                waterVolumeSelect.appendChild(option);
+            }
+        }
+
+        // 加载缓存的设置
+        function loadCachedSettings() {
+            const cachedVolume = localStorage.getItem('lastWaterVolume');
+            if (cachedVolume) {
+                waterVolumeSelect.value = cachedVolume;
+                handleWaterVolumeChange();
+            }
+        }
+
+        // 处理水体积变化
+        function handleWaterVolumeChange() {
+            const waterVolume = parseInt(waterVolumeSelect.value);
+            
+            // 保存到本地缓存
+            localStorage.setItem('lastWaterVolume', waterVolume);
+            
+            // 计算并显示总重量
+            const totalWeight = calculateTotalWeight(waterVolume);
+            totalWeightDisplay.textContent = `${totalWeight} g`;
+            
+            // 显示相关部分
+            totalWeightSection.classList.remove('hidden');
+            calculateSection.classList.remove('hidden');
+            
+            // 更新奶瓶动画
+            updateMilkLevel(waterVolume);
+        }
+
+        // 计算总重量
+        function calculateTotalWeight(waterVolume) {
+            // 计算奶粉勺数
+            const scoops = waterVolume / WATER_PER_SCOOP;
+            // 计算奶粉总重量
+            const milkPowderWeight = scoops * MILK_POWDER_PER_SCOOP;
+            // 水的重量 (假设水的密度为1g/ml)
+            const waterWeight = waterVolume;
+            // 总重量
+            return EMPTY_BOTTLE_WEIGHT + waterWeight + milkPowderWeight;
+        }
+
+        // 更新奶瓶动画
+        function updateMilkLevel(waterVolume) {
+            // 计算奶量占比 (基于最大210ml水对应约233ml奶)
+            const maxMilkLevel = 233; // 210ml水对应约233ml奶
+            const milkVolume = waterVolume / WATER_TO_MILK_RATIO;
+            const levelPercentage = (milkVolume / maxMilkLevel) * 100;
+            
+            milkLevelElement.style.height = `${levelPercentage}%`;
+        }
+
+        // 计算宝宝喝奶量
+        function calculateMilkConsumption() {
+            const waterVolume = parseInt(waterVolumeSelect.value);
+            const remainingWeight = parseInt(remainingWeightInput.value);
+            
+            // 验证输入
+            if (isNaN(remainingWeight) || remainingWeight < EMPTY_BOTTLE_WEIGHT) {
+                alert('请输入有效的剩余重量，不能小于空瓶重量175g');
+                return;
+            }
+            
+            // 计算总重量
+            const totalWeight = calculateTotalWeight(waterVolume);
+            
+            // 计算喝掉的重量
+            const drankWeight = totalWeight - remainingWeight;
+            
+            // 计算喝掉的体积 (根据90ml水=100ml奶的比例)
+            // 首先计算总奶量
+            const totalMilkVolume = waterVolume / WATER_TO_MILK_RATIO;
+            // 计算总奶重 (总重量 - 空瓶重量)
+            const totalMilkWeight = totalWeight - EMPTY_BOTTLE_WEIGHT;
+            // 根据比例计算喝掉的体积
+            const drankVolume = Math.round((drankWeight / totalMilkWeight) * totalMilkVolume);
+            
+            // 计算equivalent多少勺奶粉的量
+            const totalScoops = waterVolume / WATER_PER_SCOOP;
+            const drankScoops = Math.round((drankVolume / totalMilkVolume) * totalScoops * 10) / 10;
+            
+            // 显示结果
+            drankWeightDisplay.textContent = `${drankWeight} g`;
+            drankVolumeDisplay.textContent = `${drankVolume} ml`;
+            scoopsCountDisplay.textContent = `${drankScoops}`;
+            
+            resultSection.classList.remove('hidden');
+            
+            // 确保结果在可见区域内
+            resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
